@@ -2,7 +2,8 @@ namespace ChudType.Audio;
 
 public static class VoiceActivity
 {
-    private const int Rate = Microphone.Recording.SampleRate;
+    public const int SampleRate = 16000;
+    private const int Rate = SampleRate;
     private const int Frame = Rate / 50;
 
     public static double Rms(ReadOnlySpan<short> samples)

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Windows;
 
 namespace ChudType.Core;
 
@@ -20,8 +19,11 @@ public sealed class DictationModel
     };
 
     private readonly Lazy<Checkpoint> weights;
-    public DictationModel() : this(() => Application.GetResourceStream(
-        new Uri("/ChudType;component/Assets/dictation-v1.json", UriKind.Relative)).Stream) { }
+    public DictationModel() : this(OpenBundledCheckpoint) { }
+
+    private static Stream OpenBundledCheckpoint() =>
+        typeof(DictationModel).Assembly.GetManifestResourceStream("ChudType.Assets.dictation-v1.json")
+        ?? throw new InvalidDataException("ChudGPT Dictation weights are missing.");
 
     public DictationModel(Func<Stream> open) => weights = new(() =>
     {

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../ChudType/Audio/VoiceActivity.cs" Link="Audio/VoiceActivity.cs" />
+    <Compile Include="../ChudType/Core/DictationModel.cs" Link="Core/DictationModel.cs" />
+    <Compile Include="../ChudType/Core/Preferences.cs" Link="Core/Preferences.cs" />
+    <Compile Include="../ChudType/Core/TextCleanup.cs" Link="Core/TextCleanup.cs" />
+    <EmbeddedResource Include="../ChudType/Assets/dictation-v1.json" LogicalName="ChudType.Assets.dictation-v1.json" />
+  </ItemGroup>
+</Project>
