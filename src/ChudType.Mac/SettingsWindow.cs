@@ -54,9 +54,17 @@ internal sealed class SettingsWindow : Window
     private StackPanel SystemSettings()
     {
         var panel = Section("System", "Behavior, sounds, and notifications");
-        panel.Children.Add(Toggle("Launch app at login", "Start ChudType after you sign in", preferences.LaunchAtLogin, value => preferences.LaunchAtLogin = value));
+        panel.Children.Add(Toggle("Launch app at login", "Start ChudType after you sign in", preferences.LaunchAtLogin, value =>
+        {
+            MacSystemIntegration.SetLaunchAtLogin(value);
+            preferences.LaunchAtLogin = value;
+        }));
         panel.Children.Add(Toggle("Show floating bar", "Keep dictation status visible", preferences.ShowFloatingBar, value => preferences.ShowFloatingBar = value));
-        panel.Children.Add(Toggle("Show app in Dock", "Keep ChudType visible in the macOS Dock", preferences.ShowInDock, value => preferences.ShowInDock = value));
+        panel.Children.Add(Toggle("Show app in Dock", "Keep ChudType visible in the macOS Dock", preferences.ShowInDock, value =>
+        {
+            MacSystemIntegration.SetDockVisible(value);
+            preferences.ShowInDock = value;
+        }));
         panel.Children.Add(Toggle("Dictation and notification sounds", "Play start, stop, and completion cues", preferences.Sounds, value => preferences.Sounds = value));
         panel.Children.Add(Toggle("Mute all audio while dictating", "Reduce interference from speakers", preferences.MuteAudioWhileDictating, value => preferences.MuteAudioWhileDictating = value));
         panel.Children.Add(Toggle("Suggestions", "Tips about setup and usage", preferences.Suggestions, value => preferences.Suggestions = value));
