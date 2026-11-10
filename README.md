@@ -1,5 +1,16 @@
 # ChudType 0.1.4
 
+## macOS development build
+
+The cross-platform branch includes an Apple Silicon Mac app with offline streaming transcription, F8 start/stop, clipboard fallback, and Accessibility-based insertion.
+
+```zsh
+DOTNET_BIN=/path/to/dotnet ./packaging/Build-Mac.sh
+open artifacts/mac/ChudType.app
+```
+
+On first launch, ChudType downloads and verifies the compact local English model. macOS asks for Microphone permission when recording begins. Accessibility permission is required for the global F8 shortcut and inserting text into other applications; copying remains available without it.
+
 ChudType is a Windows dictation app from CHUDAI. Its small floating bar uses the logo from the official ChudGPT landing page. Click the logo to start dictation, or drag it to move the bar and save its position. You can also hold **Ctrl + Shift + Space** and release it when you finish speaking. The bar shows the live microphone level, elapsed time, transcription progress, and stop and cancel controls. Use **Dictation → Floating bar** to change its visibility, choose a dock edge, or reset the saved position.
 
 [Product page](https://chudgpt-landing.vercel.app/ChudType) · [Windows downloads](https://github.com/ASTRA228b/ChudType/releases/latest)

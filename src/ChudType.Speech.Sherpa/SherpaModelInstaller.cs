@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
-using SharpCompress.Archives;
+using SharpCompress.Archives.Tar;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.BZip2;
 
 namespace ChudType.Speech.Sherpa;
 
@@ -35,7 +37,9 @@ public sealed class SherpaModelInstaller(HttpClient http, string modelRoot)
         CancellationToken cancellation = default)
     {
         Directory.CreateDirectory(modelRoot);
-        string archivePath = Path.Combine(modelRoot, package.Id + ".tar.bz2.download");
+        string archivePath = Path.Combine(modelRoot, package.Id + ".download.tar.bz2");
+        string legacyPath = Path.Combine(modelRoot, package.Id + ".tar.bz2.download");
+        if (!File.Exists(archivePath) && File.Exists(legacyPath)) File.Move(legacyPath, archivePath);
         await DownloadVerifiedAsync(package, archivePath, progress, cancellation);
 
         string stage = Path.Combine(modelRoot, ".install-" + package.Id + "-" + Guid.NewGuid().ToString("N"));
@@ -68,6 +72,16 @@ public sealed class SherpaModelInstaller(HttpClient http, string modelRoot)
     {
         long existing = File.Exists(path) ? new FileInfo(path).Length : 0;
         if (existing > package.Bytes) { File.Delete(path); existing = 0; }
+        if (existing == package.Bytes)
+        {
+            if (await HasExpectedDigestAsync(path, package.Sha256, cancellation))
+            {
+                progress?.Report(1);
+                return;
+            }
+            File.Delete(path);
+            existing = 0;
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, package.Download);
         if (existing > 0) request.Headers.Range = new RangeHeaderValue(existing, null);
@@ -97,16 +111,27 @@ public sealed class SherpaModelInstaller(HttpClient http, string modelRoot)
 
         var info = new FileInfo(path);
         if (info.Length != package.Bytes) throw new InvalidDataException("The speech model download is incomplete.");
+        if (!await HasExpectedDigestAsync(path, package.Sha256, cancellation))
+            throw new InvalidDataException("The speech model failed SHA-256 verification.");
+    }
+
+    private static async Task<bool> HasExpectedDigestAsync(string path, string expected, CancellationToken cancellation)
+    {
         await using var verify = File.OpenRead(path);
         string digest = Convert.ToHexString(await SHA256.HashDataAsync(verify, cancellation));
-        if (!digest.Equals(package.Sha256, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("The speech model failed SHA-256 verification.");
+        return digest.Equals(expected, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void ExtractSafely(string archivePath, string stage, CancellationToken cancellation)
     {
         string prefix = Path.GetFullPath(stage) + Path.DirectorySeparatorChar;
-        using var archive = ArchiveFactory.OpenArchive(archivePath);
+        using var compressed = File.OpenRead(archivePath);
+        using var uncompressed = BZip2Stream.Create(compressed, CompressionMode.Decompress,
+            decompressConcatenated: false);
+        string tarPath = Path.Combine(stage, ".model.tar");
+        using (var tar = new FileStream(tarPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            uncompressed.CopyTo(tar);
+        using var archive = TarArchive.OpenArchive(tarPath);
         foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
         {
             cancellation.ThrowIfCancellationRequested();
@@ -122,5 +147,6 @@ public sealed class SherpaModelInstaller(HttpClient http, string modelRoot)
             using var output = new FileStream(targetPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             input.CopyTo(output);
         }
+        File.Delete(tarPath);
     }
 }
