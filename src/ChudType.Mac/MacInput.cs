@@ -25,15 +25,26 @@ internal static class MacInput
         };
         ulong actual = CGEventSourceFlagsState(1) & KnownModifierMask;
         if (actual != required) return false;
-        return shortcut.Trigger == "Middle Mouse"
-            ? CGEventSourceButtonState(1, 2)
-            : KeyCode(shortcut.Trigger) is ushort key && CGEventSourceKeyState(1, key);
+        return shortcut.Trigger switch
+        {
+            "Middle Mouse" => CGEventSourceButtonState(1, 2),
+            "Mouse Button 4" => CGEventSourceButtonState(1, 3),
+            "Mouse Button 5" => CGEventSourceButtonState(1, 4),
+            _ => KeyCode(shortcut.Trigger) is ushort key && CGEventSourceKeyState(1, key)
+        };
     }
 
     private static ushort? KeyCode(string key) => key switch
     {
         "F6" => 97, "F7" => 98, "F8" => 100, "F9" => 101,
         "F10" => 109, "F11" => 103, "F12" => 111, "Space" => 49,
+        "A" => 0, "S" => 1, "D" => 2, "F" => 3, "H" => 4, "G" => 5,
+        "Z" => 6, "X" => 7, "C" => 8, "V" => 9, "B" => 11,
+        "Q" => 12, "W" => 13, "E" => 14, "R" => 15, "Y" => 16, "T" => 17,
+        "1" => 18, "2" => 19, "3" => 20, "4" => 21, "6" => 22, "5" => 23,
+        "9" => 25, "7" => 26, "8" => 28, "0" => 29,
+        "O" => 31, "U" => 32, "I" => 34, "P" => 35, "L" => 37,
+        "J" => 38, "K" => 40, "N" => 45, "M" => 46,
         _ => null
     };
 

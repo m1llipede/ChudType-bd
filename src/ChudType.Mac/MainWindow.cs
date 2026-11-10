@@ -34,8 +34,15 @@ internal sealed class MainWindow : Window
     public MainWindow()
     {
         shortcutModifier = new ComboBox { ItemsSource = new[] { "None", "Control", "Command", "Option", "Shift" }, SelectedItem = shortcut.Modifier };
-        shortcutTrigger = new ComboBox { ItemsSource = new[] { "Middle Mouse", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" }, SelectedItem = shortcut.Trigger };
+        shortcutTrigger = new ComboBox
+        {
+            ItemsSource = new[] { "Middle Mouse", "Mouse Button 4", "Mouse Button 5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" }
+                .Concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(character => character.ToString()))
+                .Concat(Enumerable.Range(0, 10).Select(number => number.ToString())).ToArray(),
+            SelectedItem = shortcut.Trigger
+        };
         shortcutMode = new ComboBox { ItemsSource = new[] { "Hold to talk", "Toggle hands-free" }, SelectedItem = shortcut.Mode };
+        dictate.Content = $"Start dictation ({shortcut})";
         Title = "ChudType for Mac";
         Width = 660;
         Height = 440;
