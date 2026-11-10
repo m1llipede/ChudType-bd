@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChudType.Core.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChudType.Speech.Sherpa", "src\ChudType.Speech.Sherpa\ChudType.Speech.Sherpa.csproj", "{5B5EF126-367F-45DF-903E-E579A1701B63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChudType.Speech.Sherpa.Tests", "tests\ChudType.Speech.Sherpa.Tests\ChudType.Speech.Sherpa.Tests.csproj", "{EFE67560-5013-4299-8575-2D21E900C854}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{5B5EF126-367F-45DF-903E-E579A1701B63}.Release|x64.Build.0 = Release|Any CPU
 		{5B5EF126-367F-45DF-903E-E579A1701B63}.Release|x86.ActiveCfg = Release|Any CPU
 		{5B5EF126-367F-45DF-903E-E579A1701B63}.Release|x86.Build.0 = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|x64.Build.0 = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Debug|x86.Build.0 = Debug|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|x64.ActiveCfg = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|x64.Build.0 = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|x86.ActiveCfg = Release|Any CPU
+		{EFE67560-5013-4299-8575-2D21E900C854}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{4A125D33-07AF-430A-8B10-FE2F19005261} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{24124598-D75B-4299-B599-9FC3E327C89C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{5B5EF126-367F-45DF-903E-E579A1701B63} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{EFE67560-5013-4299-8575-2D21E900C854} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

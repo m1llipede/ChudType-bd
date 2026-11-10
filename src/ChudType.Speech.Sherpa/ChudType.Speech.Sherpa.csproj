@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="org.k2fsa.sherpa.onnx" Version="2.0.1" />
+    <PackageReference Include="SharpCompress" Version="0.50.8" />
     <ProjectReference Include="../ChudType.Core/ChudType.Core.csproj" />
   </ItemGroup>
 </Project>
