@@ -11,6 +11,26 @@ internal static class MacSystemIntegration
     private static string AgentPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "LaunchAgents", Label + ".plist");
 
+    public static int FrontmostProcessId
+    {
+        get
+        {
+            nint workspaceClass = objc_getClass("NSWorkspace");
+            nint workspace = IntPtrMessage(workspaceClass, sel_registerName("sharedWorkspace"));
+            nint application = IntPtrMessage(workspace, sel_registerName("frontmostApplication"));
+            return application == 0 ? 0 : IntMessage(application, sel_registerName("processIdentifier"));
+        }
+    }
+
+    public static bool Activate(int processId)
+    {
+        if (processId <= 0) return false;
+        nint applicationClass = objc_getClass("NSRunningApplication");
+        nint application = IntMessagePointer(applicationClass,
+            sel_registerName("runningApplicationWithProcessIdentifier:"), processId);
+        return application != 0 && BoolUlongMessage(application, sel_registerName("activateWithOptions:"), 1UL << 1);
+    }
+
     public static void SetDockVisible(bool visible)
     {
         nint applicationClass = objc_getClass("NSApplication");
@@ -61,6 +81,9 @@ internal static class MacSystemIntegration
     [DllImport(ObjectiveC)] private static extern nint objc_getClass(string name);
     [DllImport(ObjectiveC)] private static extern nint sel_registerName(string name);
     [DllImport(ObjectiveC, EntryPoint = "objc_msgSend")] private static extern nint IntPtrMessage(nint receiver, nint selector);
+    [DllImport(ObjectiveC, EntryPoint = "objc_msgSend")] private static extern int IntMessage(nint receiver, nint selector);
+    [DllImport(ObjectiveC, EntryPoint = "objc_msgSend")] private static extern nint IntMessagePointer(nint receiver, nint selector, int value);
+    [DllImport(ObjectiveC, EntryPoint = "objc_msgSend")] private static extern bool BoolUlongMessage(nint receiver, nint selector, ulong value);
     [DllImport(ObjectiveC, EntryPoint = "objc_msgSend")] private static extern bool LongMessage(nint receiver, nint selector, long value);
     [DllImport("/usr/lib/libSystem.B.dylib")] private static extern uint geteuid();
 }

@@ -26,6 +26,7 @@ internal sealed class MacPreferences
     public string EmailStyle { get; set; } = "Formal";
     public string OtherStyle { get; set; } = "Casual";
     public bool AutoCleanup { get; set; } = true;
+    public bool AutoInsert { get; set; } = true;
 }
 
 internal static class MacPreferencesStore

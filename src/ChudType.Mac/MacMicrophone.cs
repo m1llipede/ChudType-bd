@@ -27,8 +27,10 @@ internal sealed class MacMicrophone : IAsyncDisposable
         };
         foreach (string argument in new[] { "-W", "-n", helper, "--args", pipePath }) start.ArgumentList.Add(argument);
         process = Process.Start(start) ?? throw new InvalidOperationException("The Mac microphone helper could not start.");
-        audio = await Task.Run(() => new FileStream(pipePath, FileMode.Open, FileAccess.Read, FileShare.Read,
-            3_200, FileOptions.Asynchronous), cancellation).ConfigureAwait(false);
+        // ReadWrite prevents a FIFO open deadlock when macOS denies permission
+        // before the helper manages to attach its writer.
+        audio = new FileStream(pipePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite,
+            3_200, FileOptions.Asynchronous);
 
         var bytes = new byte[3_200];
         try
@@ -36,7 +38,17 @@ internal sealed class MacMicrophone : IAsyncDisposable
             while (!cancellation.IsCancellationRequested)
             {
                 int read;
-                try { read = await audio.ReadAsync(bytes, cancellation).ConfigureAwait(false); }
+                try
+                {
+                    Task<int> pendingRead = audio.ReadAsync(bytes, cancellation).AsTask();
+                    while (!pendingRead.IsCompleted)
+                    {
+                        await Task.WhenAny(pendingRead, Task.Delay(250, cancellation)).ConfigureAwait(false);
+                        if (process.HasExited)
+                            throw new InvalidOperationException("The microphone helper stopped before audio arrived. Check Microphone permission and the selected input device.");
+                    }
+                    read = await pendingRead.ConfigureAwait(false);
+                }
                 catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { break; }
                 if (read == 0)
                 {

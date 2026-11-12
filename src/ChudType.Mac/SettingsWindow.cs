@@ -60,6 +60,7 @@ internal sealed class SettingsWindow : Window
             preferences.LaunchAtLogin = value;
         }));
         panel.Children.Add(Toggle("Show floating bar", "Keep dictation status visible", preferences.ShowFloatingBar, value => preferences.ShowFloatingBar = value));
+        panel.Children.Add(Toggle("Insert when dictation finishes", "Return the transcript to the app where dictation started", preferences.AutoInsert, value => preferences.AutoInsert = value));
         panel.Children.Add(Toggle("Show app in Dock", "Keep ChudType visible in the macOS Dock", preferences.ShowInDock, value =>
         {
             MacSystemIntegration.SetDockVisible(value);

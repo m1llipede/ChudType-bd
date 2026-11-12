@@ -30,6 +30,7 @@ internal sealed class MainWindow : Window
     private CancellationTokenSource? recording;
     private bool shortcutWasDown;
     private string finalText = "";
+    private int targetProcessId;
 
     public MainWindow()
     {
@@ -170,6 +171,8 @@ internal sealed class MainWindow : Window
         }
         recording = new CancellationTokenSource();
         var cancellation = recording;
+        int frontmost = MacSystemIntegration.FrontmostProcessId;
+        targetProcessId = frontmost == Environment.ProcessId ? 0 : frontmost;
         finalText = "";
         transcript.Text = "Listening…";
         dictate.Content = $"Stop dictation ({shortcut})";
@@ -201,18 +204,38 @@ internal sealed class MainWindow : Window
             recording = null;
             dictate.Content = $"Start dictation ({shortcut})";
             insert.IsEnabled = !string.IsNullOrWhiteSpace(finalText);
-            status.Text = string.IsNullOrWhiteSpace(finalText) ? "No speech recognized" : "Transcript ready";
+            if (string.IsNullOrWhiteSpace(finalText)) status.Text = "No speech recognized";
+            else if (preferences.AutoInsert && targetProcessId > 0) await InsertIntoTargetAsync();
+            else status.Text = "Transcript ready";
         }
     }
 
     private async Task InsertAsync()
     {
         if (string.IsNullOrWhiteSpace(finalText)) return;
-        if (MacInput.TypeText(finalText)) status.Text = "Inserted";
+        if (targetProcessId > 0) await InsertIntoTargetAsync();
+        else if (MacInput.TypeText(finalText)) status.Text = "Inserted";
         else
         {
             await CopyAsync();
             status.Text = "Copied · allow Accessibility, then paste into the target app";
+        }
+    }
+
+    private async Task InsertIntoTargetAsync()
+    {
+        if (!MacInput.AccessibilityGranted || !MacSystemIntegration.Activate(targetProcessId))
+        {
+            await CopyAsync();
+            status.Text = "Copied · allow Accessibility to insert automatically";
+            return;
+        }
+        await Task.Delay(120);
+        if (MacInput.TypeText(finalText)) status.Text = "Inserted into your previous app";
+        else
+        {
+            await CopyAsync();
+            status.Text = "Copied · paste into your previous app";
         }
     }
 
