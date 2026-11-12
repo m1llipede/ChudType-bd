@@ -57,9 +57,7 @@ internal sealed class SettingsWindow : Window
         panel.Children.Add(Choice("Modifier key", "Optional key held together with the trigger", shortcut.Modifier,
             new[] { "None", "Control", "Command", "Option", "Shift" }, value => SaveShortcut(shortcut with { Modifier = value })));
         panel.Children.Add(Choice("Trigger key or mouse button", "The key or mouse button that starts dictation", shortcut.Trigger,
-            new[] { "Middle Mouse", "Mouse Button 4", "Mouse Button 5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" }
-                .Concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(character => character.ToString()))
-                .Concat(Enumerable.Range(0, 10).Select(number => number.ToString())).ToArray(),
+            new[] { "Middle Mouse", "Mouse Button 4", "Mouse Button 5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" },
             value => SaveShortcut(shortcut with { Trigger = value })));
         return panel;
     }
@@ -166,6 +164,7 @@ internal sealed class SettingsWindow : Window
 
     private void SaveShortcut(MacShortcut value)
     {
+        if (!value.IsSafe) return;
         shortcut = value;
         MacShortcutStore.Save(value);
         shortcutChanged(value);
