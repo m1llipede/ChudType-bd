@@ -12,25 +12,26 @@ namespace ChudType.Mac;
 
 internal sealed class MainWindow : Window
 {
-    private readonly Button dictate = new()
+    private readonly TextBlock dictateLabel = new()
     {
-        Content = "Hold F8 to talk", HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false,
-        FontSize = 18, FontWeight = FontWeight.SemiBold, MinHeight = 54,
-        Background = new SolidColorBrush(Color.Parse("#725CFF")), Foreground = Brushes.White,
-        CornerRadius = new CornerRadius(14)
+        Text = "Hold F8 to talk", FontSize = 18, FontWeight = FontWeight.SemiBold,
+        Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+    };
+    private readonly Border dictate = new()
+    {
+        HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false, MinHeight = 54,
+        Background = new SolidColorBrush(Color.Parse("#725CFF")), CornerRadius = new CornerRadius(14),
+        Padding = new Thickness(14, 8), Cursor = new Cursor(StandardCursorType.Hand)
     };
     private readonly Button insert = new() { Content = "Insert transcript", IsEnabled = false };
     private readonly Button copy = new() { Content = "Copy" };
-    private readonly TextBlock status = new() { Text = "Preparing local speech model…", Foreground = new SolidColorBrush(Color.Parse("#BBC1CE")), TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock status = new() { Text = "Preparing local speech model…", Foreground = Brushes.White, FontSize = 14, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock transcript = new() { Text = "Your words will appear here.", FontSize = 24, TextWrapping = TextWrapping.Wrap };
     private readonly ProgressBar progress = new() { Minimum = 0, Maximum = 1, IsVisible = false };
     private readonly DispatcherTimer shortcutTimer = new() { Interval = TimeSpan.FromMilliseconds(35) };
     private readonly HttpClient http = new() { Timeout = TimeSpan.FromMinutes(15) };
     private readonly MacPreferences preferences = MacPreferencesStore.Load();
     private readonly MacPersonalization personalization = MacPersonalizationStore.Load();
-    private readonly ComboBox shortcutModifier;
-    private readonly ComboBox shortcutTrigger;
-    private readonly ComboBox shortcutMode;
     private MacShortcut shortcut = MacShortcutStore.Load();
     private SherpaRealtimeSpeechEngine? engine;
     private CancellationTokenSource? recording;
@@ -40,32 +41,26 @@ internal sealed class MainWindow : Window
 
     public MainWindow()
     {
-        shortcutModifier = new ComboBox { ItemsSource = new[] { "None", "Control", "Command", "Option", "Shift" }, SelectedItem = shortcut.Modifier };
-        shortcutTrigger = new ComboBox
-        {
-            ItemsSource = new[] { "Middle Mouse", "Mouse Button 4", "Mouse Button 5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" }
-                .Concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(character => character.ToString()))
-                .Concat(Enumerable.Range(0, 10).Select(number => number.ToString())).ToArray(),
-            SelectedItem = shortcut.Trigger
-        };
-        shortcutMode = new ComboBox { ItemsSource = new[] { "Hold to talk", "Toggle hands-free" }, SelectedItem = shortcut.Mode };
+        dictate.Child = dictateLabel;
         UpdateDictateLabel();
         Title = "ChudType for Mac";
         Width = 430;
-        Height = 220;
+        Height = 175;
         MinWidth = 390;
-        MinHeight = 210;
+        MinHeight = 165;
         MaxWidth = 520;
-        MaxHeight = 260;
+        MaxHeight = 210;
         CanResize = false;
         Background = new SolidColorBrush(Color.Parse("#101017"));
         Content = BuildUi();
-        dictate.Click += async (_, _) => await ToggleAsync();
+        dictate.PointerPressed += async (_, args) =>
+        {
+            if (!dictate.IsEnabled || args.GetCurrentPoint(dictate).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed) return;
+            args.Handled = true;
+            await ToggleAsync();
+        };
         insert.Click += async (_, _) => await InsertAsync();
         copy.Click += async (_, _) => await CopyAsync();
-        shortcutModifier.SelectionChanged += (_, _) => SaveShortcut();
-        shortcutTrigger.SelectionChanged += (_, _) => SaveShortcut();
-        shortcutMode.SelectionChanged += (_, _) => SaveShortcut();
         KeyDown += async (_, args) => { if (args.Key == Key.F8) { args.Handled = true; await ToggleAsync(); } };
         shortcutTimer.Tick += async (_, _) =>
         {
@@ -95,7 +90,7 @@ internal sealed class MainWindow : Window
         var privacy = new TextBlock
         {
             Text = "LOCAL · AUDIO STAYS ON THIS MAC", FontSize = 10,
-            FontWeight = FontWeight.SemiBold, Foreground = new SolidColorBrush(Color.Parse("#8E97A8")),
+            FontWeight = FontWeight.SemiBold, Foreground = new SolidColorBrush(Color.Parse("#C7CDDA")),
             VerticalAlignment = VerticalAlignment.Center
         };
         var personalize = new Button
@@ -110,7 +105,12 @@ internal sealed class MainWindow : Window
             Content = "⚙", FontSize = 15, MinWidth = 38, Padding = new Thickness(8, 4),
             Background = new SolidColorBrush(Color.Parse("#242532")), Foreground = Brushes.White
         };
-        settings.Click += (_, _) => new SettingsWindow(preferences).Show(this);
+        settings.Click += (_, _) => new SettingsWindow(preferences, value =>
+        {
+            shortcut = value;
+            UpdateDictateLabel();
+            status.Text = $"Ready · {ShortcutInstruction()}";
+        }).Show(this);
         ToolTip.SetTip(settings, "Settings");
         var headerActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { personalize, settings } };
 
@@ -118,20 +118,13 @@ internal sealed class MainWindow : Window
         Grid.SetColumn(title, 0); Grid.SetColumn(privacy, 1); Grid.SetColumn(headerActions, 2);
         header.Children.Add(title); header.Children.Add(privacy); header.Children.Add(headerActions);
 
-        shortcutMode.MinWidth = 130;
-        shortcutModifier.MinWidth = 95;
-        shortcutTrigger.MinWidth = 80;
-        var shortcutRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 8 };
-        Grid.SetColumn(shortcutMode, 0); Grid.SetColumn(shortcutModifier, 1); Grid.SetColumn(shortcutTrigger, 2);
-        shortcutRow.Children.Add(shortcutMode); shortcutRow.Children.Add(shortcutModifier); shortcutRow.Children.Add(shortcutTrigger);
-
         return new Border
         {
             Padding = new Thickness(18, 15),
             Child = new StackPanel
             {
                 Spacing = 10,
-                Children = { header, dictate, progress, status, shortcutRow }
+                Children = { header, dictate, progress, status }
             }
         };
     }
@@ -155,8 +148,8 @@ internal sealed class MainWindow : Window
             progress.IsVisible = false;
             dictate.IsEnabled = true;
             status.Text = MacInput.AccessibilityGranted
-                ? $"Ready · {shortcut} starts dictation"
-                : "Ready · allow Accessibility to insert into other apps";
+                ? $"Ready · {ShortcutInstruction()}"
+                : $"Ready · {ShortcutInstruction()} · clipboard fallback until Accessibility is enabled";
         }
         catch (Exception error)
         {
@@ -164,18 +157,6 @@ internal sealed class MainWindow : Window
             dictate.IsEnabled = false;
             status.Text = "Speech model setup failed: " + error.Message;
         }
-    }
-
-    private void SaveShortcut()
-    {
-        if (shortcutModifier.SelectedItem is not string modifier || shortcutTrigger.SelectedItem is not string trigger ||
-            shortcutMode.SelectedItem is not string mode) return;
-        shortcut = new MacShortcut(modifier, trigger, mode);
-        MacShortcutStore.Save(shortcut);
-        UpdateDictateLabel();
-        status.Text = MacInput.AccessibilityGranted
-            ? $"Shortcut saved · {shortcut} starts dictation"
-            : $"Shortcut saved · allow Accessibility for system-wide activation";
     }
 
     private async Task ToggleAsync()
@@ -192,8 +173,8 @@ internal sealed class MainWindow : Window
         targetProcessId = frontmost == Environment.ProcessId ? 0 : frontmost;
         finalText = "";
         transcript.Text = "Listening…";
-        dictate.Content = "Listening… release to insert";
-        status.Text = "Listening locally";
+        SetRecordingAppearance(true);
+        status.Text = "Recording locally…";
         insert.IsEnabled = false;
         try
         {
@@ -219,7 +200,7 @@ internal sealed class MainWindow : Window
         {
             recording.Dispose();
             recording = null;
-            UpdateDictateLabel();
+            SetRecordingAppearance(false);
             insert.IsEnabled = !string.IsNullOrWhiteSpace(finalText);
             if (string.IsNullOrWhiteSpace(finalText)) status.Text = "No speech recognized";
             else if (preferences.AutoInsert && targetProcessId > 0) await InsertIntoTargetAsync();
@@ -227,9 +208,28 @@ internal sealed class MainWindow : Window
         }
     }
 
-    private void UpdateDictateLabel() => dictate.Content = recording is not null
-        ? "Listening… release to insert"
-        : shortcut.Mode == "Hold to talk" ? $"Hold {shortcut} to talk" : $"Press {shortcut} to start";
+    private string ShortcutInstruction() => shortcut.Mode == "Hold to talk"
+        ? $"hold {shortcut}, speak, then release"
+        : $"press {shortcut} to start or stop";
+
+    private void UpdateDictateLabel() => dictateLabel.Text = shortcut.Mode == "Hold to talk"
+        ? $"Hold {shortcut} to talk"
+        : $"Press {shortcut} to start";
+
+    private void SetRecordingAppearance(bool active)
+    {
+        if (active)
+        {
+            dictateLabel.Text = shortcut.Mode == "Hold to talk" ? $"Recording — release {shortcut}" : $"Recording — press {shortcut} to stop";
+            dictate.Background = new SolidColorBrush(Color.Parse("#FF3F70"));
+            status.Text = "Recording locally…";
+        }
+        else
+        {
+            dictate.Background = new SolidColorBrush(Color.Parse("#725CFF"));
+            UpdateDictateLabel();
+        }
+    }
 
     private async Task InsertAsync()
     {

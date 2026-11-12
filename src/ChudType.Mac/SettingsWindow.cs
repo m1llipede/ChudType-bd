@@ -9,10 +9,13 @@ namespace ChudType.Mac;
 internal sealed class SettingsWindow : Window
 {
     private readonly MacPreferences preferences;
+    private readonly Action<MacShortcut> shortcutChanged;
+    private MacShortcut shortcut = MacShortcutStore.Load();
 
-    public SettingsWindow(MacPreferences preferences)
+    public SettingsWindow(MacPreferences preferences, Action<MacShortcut> shortcutChanged)
     {
         this.preferences = preferences;
+        this.shortcutChanged = shortcutChanged;
         Title = "ChudType Settings";
         Width = 780;
         Height = 620;
@@ -48,6 +51,16 @@ internal sealed class SettingsWindow : Window
                 if (Application.Current is { } app)
                     app.RequestedThemeVariant = value switch { "Dark" => ThemeVariant.Dark, "Light" => ThemeVariant.Light, _ => ThemeVariant.Default };
             }));
+        panel.Children.Add(new TextBlock { Text = "Dictation shortcut", FontSize = 20, FontWeight = FontWeight.SemiBold, Margin = new Thickness(0, 18, 0, 0) });
+        panel.Children.Add(Choice("Activation behavior", "Hold a shortcut while speaking, or press once to start and again to stop", shortcut.Mode,
+            new[] { "Hold to talk", "Toggle hands-free" }, value => SaveShortcut(shortcut with { Mode = value })));
+        panel.Children.Add(Choice("Modifier key", "Optional key held together with the trigger", shortcut.Modifier,
+            new[] { "None", "Control", "Command", "Option", "Shift" }, value => SaveShortcut(shortcut with { Modifier = value })));
+        panel.Children.Add(Choice("Trigger key or mouse button", "The key or mouse button that starts dictation", shortcut.Trigger,
+            new[] { "Middle Mouse", "Mouse Button 4", "Mouse Button 5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Space" }
+                .Concat("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(character => character.ToString()))
+                .Concat(Enumerable.Range(0, 10).Select(number => number.ToString())).ToArray(),
+            value => SaveShortcut(shortcut with { Trigger = value })));
         return panel;
     }
 
@@ -150,4 +163,11 @@ internal sealed class SettingsWindow : Window
     }
 
     private void Save() => MacPreferencesStore.Save(preferences);
+
+    private void SaveShortcut(MacShortcut value)
+    {
+        shortcut = value;
+        MacShortcutStore.Save(value);
+        shortcutChanged(value);
+    }
 }
