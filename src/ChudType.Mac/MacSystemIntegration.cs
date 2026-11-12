@@ -11,6 +11,21 @@ internal static class MacSystemIntegration
     private static string AgentPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "LaunchAgents", Label + ".plist");
 
+    public static bool IsDarkAppearance()
+    {
+        var start = new ProcessStartInfo
+        {
+            FileName = "/usr/bin/defaults", RedirectStandardOutput = true,
+            RedirectStandardError = true, UseShellExecute = false
+        };
+        start.ArgumentList.Add("read"); start.ArgumentList.Add("-g"); start.ArgumentList.Add("AppleInterfaceStyle");
+        using var process = Process.Start(start);
+        if (process is null) return false;
+        string value = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+        return process.ExitCode == 0 && value.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static int FrontmostProcessId
     {
         get

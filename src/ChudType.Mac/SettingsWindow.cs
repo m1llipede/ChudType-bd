@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Styling;
 
 namespace ChudType.Mac;
 
@@ -28,7 +27,6 @@ internal sealed class SettingsWindow : Window
             {
                 Page("General", General()),
                 Page("System", SystemSettings()),
-                Page("Style", StyleSettings()),
                 Page("Data & Privacy", PrivacySettings())
             }
         };
@@ -39,17 +37,10 @@ internal sealed class SettingsWindow : Window
     private StackPanel General()
     {
         var panel = Section("General", "Core dictation preferences");
-        panel.Children.Add(Choice("My languages", "Languages recognized during dictation", preferences.Language,
-            new[] { "English", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese", "Korean", "Chinese" },
-            value => preferences.Language = value));
-        panel.Children.Add(Choice("App language", "Language used by the ChudType interface", preferences.AppLanguage,
-            new[] { "English", "Spanish", "French", "German" }, value => preferences.AppLanguage = value));
-        panel.Children.Add(Choice("Theme", "Follow macOS or choose a light or dark appearance", preferences.Theme,
+        panel.Children.Add(Choice("Theme", "Follow macOS or choose a light or dark appearance; applies when ChudType reopens", preferences.Theme,
             new[] { "System", "Dark", "Light" }, value =>
             {
                 preferences.Theme = value;
-                if (Application.Current is { } app)
-                    app.RequestedThemeVariant = value switch { "Dark" => ThemeVariant.Dark, "Light" => ThemeVariant.Light, _ => ThemeVariant.Default };
             }));
         panel.Children.Add(new TextBlock { Text = "Dictation shortcut", FontSize = 20, FontWeight = FontWeight.SemiBold, Margin = new Thickness(0, 18, 0, 0) });
         panel.Children.Add(Choice("Activation behavior", "Hold a shortcut while speaking, or press once to start and again to stop", shortcut.Mode,
@@ -64,54 +55,30 @@ internal sealed class SettingsWindow : Window
 
     private StackPanel SystemSettings()
     {
-        var panel = Section("System", "Behavior, sounds, and notifications");
+        var panel = Section("System", "Startup, insertion, and permissions");
         panel.Children.Add(Toggle("Launch app at login", "Start ChudType after you sign in", preferences.LaunchAtLogin, value =>
         {
             MacSystemIntegration.SetLaunchAtLogin(value);
             preferences.LaunchAtLogin = value;
         }));
-        panel.Children.Add(Toggle("Show floating bar", "Keep dictation status visible", preferences.ShowFloatingBar, value => preferences.ShowFloatingBar = value));
         panel.Children.Add(Toggle("Insert when dictation finishes", "Return the transcript to the app where dictation started", preferences.AutoInsert, value => preferences.AutoInsert = value));
         panel.Children.Add(Toggle("Show app in Dock", "Keep ChudType visible in the macOS Dock", preferences.ShowInDock, value =>
         {
             MacSystemIntegration.SetDockVisible(value);
             preferences.ShowInDock = value;
         }));
-        panel.Children.Add(Toggle("Dictation and notification sounds", "Play start, stop, and completion cues", preferences.Sounds, value => preferences.Sounds = value));
-        panel.Children.Add(Toggle("Mute all audio while dictating", "Reduce interference from speakers", preferences.MuteAudioWhileDictating, value => preferences.MuteAudioWhileDictating = value));
-        panel.Children.Add(Toggle("Suggestions", "Tips about setup and usage", preferences.Suggestions, value => preferences.Suggestions = value));
-        panel.Children.Add(Toggle("Announcements", "New local features and capabilities", preferences.Announcements, value => preferences.Announcements = value));
-        panel.Children.Add(Toggle("Milestones", "Word-count and usage milestones", preferences.Milestones, value => preferences.Milestones = value));
-        panel.Children.Add(Toggle("Auto-add corrected words", "Learn explicit spelling corrections locally", preferences.AutoAddDictionary, value => preferences.AutoAddDictionary = value));
-        panel.Children.Add(Toggle("Creator mode", "Show a small ChudType badge while recording", preferences.CreatorMode, value => preferences.CreatorMode = value));
         var accessibility = new Button { Content = "Open Accessibility permission" };
         accessibility.Click += (_, _) => MacInput.OpenAccessibilitySettings();
         panel.Children.Add(Row("Text insertion", "Accessibility lets ChudType type into the app where dictation started.", accessibility));
         return panel;
     }
 
-    private StackPanel StyleSettings()
-    {
-        var panel = Section("Style", "Context-specific capitalization and punctuation");
-        string[] styles = ["Formal", "Casual", "Very casual", "Raw"];
-        panel.Children.Add(Choice("Personal messages", "Messages, chats, and social apps", preferences.PersonalStyle, styles, value => preferences.PersonalStyle = value));
-        panel.Children.Add(Choice("Work messages", "Team chat and collaboration tools", preferences.WorkStyle, styles, value => preferences.WorkStyle = value));
-        panel.Children.Add(Choice("Email", "Longer professional correspondence", preferences.EmailStyle, styles, value => preferences.EmailStyle = value));
-        panel.Children.Add(Choice("Other apps", "Default when no app rule matches", preferences.OtherStyle, styles, value => preferences.OtherStyle = value));
-        panel.Children.Add(Toggle("Automatic cleanup", "Remove filler words and normalize spacing locally", preferences.AutoCleanup, value => preferences.AutoCleanup = value));
-        return panel;
-    }
-
     private StackPanel PrivacySettings()
     {
-        var panel = Section("Data & Privacy", "ChudType defaults to local processing and minimal retention");
-        panel.Children.Add(Toggle("Improve models", "Allow diagnostic examples to be shared only after explicit review", preferences.ImproveModels, value => preferences.ImproveModels = value));
-        panel.Children.Add(Toggle("Store dictation history", "Retain transcripts on this Mac", preferences.StoreHistory, value => preferences.StoreHistory = value));
-        panel.Children.Add(Toggle("Context awareness", "Use limited text around the cursor to improve names and terminology", preferences.ContextAwareness, value => preferences.ContextAwareness = value));
-        panel.Children.Add(Toggle("Store settings locally", "Keep preferences, dictionary, and snippets on this Mac", preferences.StoreLocally, value => preferences.StoreLocally = value));
+        var panel = Section("Data & Privacy", "Local processing with minimal retention");
         panel.Children.Add(new TextBlock
         {
-            Text = "Unlike cloud-first dictation services, local speech audio is not uploaded. Any future online cleanup provider must be separately enabled and clearly identified.",
+            Text = "Microphone audio is transcribed locally and is not uploaded. ChudType keeps only your preferences, shortcut, dictionary, and snippets on this Mac. The compact Mac app does not store transcript history or recordings.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.Gray,
             Margin = new Thickness(0, 18, 0, 0)

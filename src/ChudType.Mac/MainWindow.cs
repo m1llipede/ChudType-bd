@@ -36,12 +36,15 @@ internal sealed class MainWindow : Window
     private SherpaRealtimeSpeechEngine? engine;
     private CancellationTokenSource? recording;
     private bool shortcutWasDown;
+    private readonly bool darkAppearance;
     private string finalText = "";
     private int targetProcessId;
 
     public MainWindow()
     {
+        darkAppearance = preferences.Theme == "Dark" || preferences.Theme == "System" && MacSystemIntegration.IsDarkAppearance();
         dictate.Child = dictateLabel;
+        status.Foreground = ForegroundBrush;
         UpdateDictateLabel();
         Title = "ChudType for Mac";
         Width = 430;
@@ -51,7 +54,7 @@ internal sealed class MainWindow : Window
         MaxWidth = 520;
         MaxHeight = 210;
         CanResize = false;
-        Background = new SolidColorBrush(Color.Parse("#101017"));
+        Background = PageBrush;
         Content = BuildUi();
         dictate.PointerPressed += async (_, args) =>
         {
@@ -61,7 +64,6 @@ internal sealed class MainWindow : Window
         };
         insert.Click += async (_, _) => await InsertAsync();
         copy.Click += async (_, _) => await CopyAsync();
-        KeyDown += async (_, args) => { if (args.Key == Key.F8) { args.Handled = true; await ToggleAsync(); } };
         shortcutTimer.Tick += async (_, _) =>
         {
             bool down = MacInput.ShortcutDown(shortcut);
@@ -85,25 +87,25 @@ internal sealed class MainWindow : Window
         var title = new TextBlock
         {
             Text = "ChudType", FontSize = 20, FontWeight = FontWeight.Bold,
-            Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+            Foreground = ForegroundBrush, VerticalAlignment = VerticalAlignment.Center
         };
         var privacy = new TextBlock
         {
             Text = "LOCAL · AUDIO STAYS ON THIS MAC", FontSize = 10,
-            FontWeight = FontWeight.SemiBold, Foreground = new SolidColorBrush(Color.Parse("#C7CDDA")),
+            FontWeight = FontWeight.SemiBold, Foreground = MutedBrush,
             VerticalAlignment = VerticalAlignment.Center
         };
         var personalize = new Button
         {
             Content = "Aa", FontSize = 13, FontWeight = FontWeight.SemiBold, MinWidth = 38, Padding = new Thickness(8, 4),
-            Background = new SolidColorBrush(Color.Parse("#242532")), Foreground = Brushes.White
+            Background = SecondaryBrush, Foreground = ForegroundBrush
         };
         personalize.Click += (_, _) => new PersonalizationWindow(personalization).Show(this);
         ToolTip.SetTip(personalize, "Dictionary and snippets");
         var settings = new Button
         {
             Content = "⚙", FontSize = 15, MinWidth = 38, Padding = new Thickness(8, 4),
-            Background = new SolidColorBrush(Color.Parse("#242532")), Foreground = Brushes.White
+            Background = SecondaryBrush, Foreground = ForegroundBrush
         };
         settings.Click += (_, _) => new SettingsWindow(preferences, value =>
         {
@@ -128,6 +130,11 @@ internal sealed class MainWindow : Window
             }
         };
     }
+
+    private IBrush PageBrush => new SolidColorBrush(Color.Parse(darkAppearance ? "#101017" : "#F6F6FA"));
+    private IBrush ForegroundBrush => new SolidColorBrush(Color.Parse(darkAppearance ? "#FFFFFF" : "#171721"));
+    private IBrush MutedBrush => new SolidColorBrush(Color.Parse(darkAppearance ? "#C7CDDA" : "#505664"));
+    private IBrush SecondaryBrush => new SolidColorBrush(Color.Parse(darkAppearance ? "#242532" : "#E4E4EC"));
 
     private async Task PrepareModelAsync()
     {
