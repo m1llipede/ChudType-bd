@@ -12,6 +12,7 @@ mkdir -p "$release"
 
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$app" "$release/ChudType-$version-macOS-arm64.zip"
 hdiutil create -quiet -volname "ChudType" -srcfolder "$app" -ov -format UDZO "$release/ChudType-$version-macOS-arm64.dmg"
+cp "$repo/docs/MAC-HANDOFF.md" "$release/README-FIRST.md"
 
 shasum -a 256 "$release/ChudType-$version-macOS-arm64.zip" "$release/ChudType-$version-macOS-arm64.dmg" \
   > "$release/SHA256SUMS.txt"
