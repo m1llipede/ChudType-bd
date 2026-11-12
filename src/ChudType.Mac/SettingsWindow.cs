@@ -73,6 +73,9 @@ internal sealed class SettingsWindow : Window
         panel.Children.Add(Toggle("Milestones", "Word-count and usage milestones", preferences.Milestones, value => preferences.Milestones = value));
         panel.Children.Add(Toggle("Auto-add corrected words", "Learn explicit spelling corrections locally", preferences.AutoAddDictionary, value => preferences.AutoAddDictionary = value));
         panel.Children.Add(Toggle("Creator mode", "Show a small ChudType badge while recording", preferences.CreatorMode, value => preferences.CreatorMode = value));
+        var accessibility = new Button { Content = "Open Accessibility permission" };
+        accessibility.Click += (_, _) => MacInput.OpenAccessibilitySettings();
+        panel.Children.Add(Row("Text insertion", "Accessibility lets ChudType type into the app where dictation started.", accessibility));
         return panel;
     }
 
