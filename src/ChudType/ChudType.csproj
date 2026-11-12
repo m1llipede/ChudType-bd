@@ -27,4 +27,8 @@
     <PackageReference Include="Whisper.net.Runtime.NoAvx" Version="1.9.1" />
     <Resource Include="Assets/chudgpt.png;Assets/chudgpt.ico;Assets/dictation-v1.json" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Audio/VoiceActivity.cs;Core/DictationModel.cs;Core/Preferences.cs;Core/TextCleanup.cs" />
+    <ProjectReference Include="../ChudType.Core/ChudType.Core.csproj" />
+  </ItemGroup>
 </Project>

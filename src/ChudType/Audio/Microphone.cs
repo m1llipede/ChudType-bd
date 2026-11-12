@@ -35,7 +35,7 @@ public sealed class Microphone
 
     public sealed class Recording : IMicrophoneRecording
     {
-        public const int SampleRate = 16000;
+        public const int SampleRate = VoiceActivity.SampleRate;
         public const int LimitSeconds = 300;
         private readonly MMDeviceEnumerator enumerator = new();
         private readonly MMDevice device;
